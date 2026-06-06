@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KayIA — Démo Restaurant</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#f9f4ec;display:flex;flex-direction:column;height:100vh;max-width:480px;margin:0 auto}
+.hdr{background:#1a3d2b;padding:14px 18px;display:flex;align-items:center;gap:10px}
+.hdr-av{width:40px;height:40px;background:#c8963e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff}
+.hdr-name{font-weight:600;color:#fff;font-size:15px}
+.hdr-status{font-size:11px;color:#7ecf9a}
+.hdr-logo{margin-left:auto;font-size:13px;font-weight:700;color:#c8963e}
+.msgs{flex:1;overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:82%;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.msg.bot{align-self:flex-start}
+.msg.user{align-self:flex-end}
+.bubble{padding:9px 13px;border-radius:16px;font-size:14px;line-height:1.55}
+.msg.bot .bubble{background:#fff;color:#1a1a18;border-bottom-left-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.msg.user .bubble{background:#1a3d2b;color:#fff;border-bottom-right-radius:3px}
+.qrs{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.qr{background:#fff;border:1.5px solid #1a3d2b;color:#1a3d2b;border-radius:20px;padding:5px 12px;font-size:12px;cursor:pointer;transition:all .15s}
+.qr:hover{background:#1a3d2b;color:#fff}
+.typing{display:flex;gap:4px;padding:10px 13px}
+.typing span{width:7px;height:7px;background:#aaa;border-radius:50%;animation:bounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.input-area{padding:10px 12px;border-top:1px solid #ede6d8;display:flex;gap:8px;background:#fff}
+.ci{flex:1;border:1.5px solid #ede6d8;border-radius:20px;padding:9px 14px;font-size:14px;outline:none;background:#f9f4ec}
+.ci:focus{border-color:#1a3d2b;background:#fff}
+.sb{width:40px;height:40px;background:#1a3d2b;border:none;border-radius:50%;cursor:pointer;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center}
+.sb:hover{background:#2d6a45}
+.wa-bar{background:#25d366;padding:10px 16px;display:flex;align-items:center;justify-content:space-between}
+.wa-bar span{color:#fff;font-size:12px;font-weight:500}
+.wa-btn{background:#fff;color:#128c7e;border:none;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer}
+.bname{font-size:10px;color:#888;margin-bottom:3px}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-av">K</div>
+  <div>
+    <div class="hdr-name">Kaz'à Manger</div>
+    <div class="hdr-status">● En ligne maintenant</div>
+  </div>
+  <div class="hdr-logo">KayIA</div>
+</div>
+<div class="msgs" id="msgs"></div>
+<div class="wa-bar">
+  <span>💬 Continuer sur WhatsApp</span>
+  <button class="wa-btn" onclick="window.open('https://wa.me/590690000000?text=Bonjour%20!','_blank')">Ouvrir →</button>
+</div>
+<div class="input-area">
+  <input class="ci" id="inp" placeholder="Écrivez votre message…" onkeydown="if(event.key==='Enter')send()">
+  <button class="sb" onclick="send()">➤</button>
+</div>
+<script>
+const R=[
+  {k:['bonjour','bonsoir','salut','hello','hi','bonne'],r:'Bonjour ! 🌴 Bienvenue chez Kaz\'à Manger, restaurant créole à Pointe-à-Pitre.\n\nComment puis-je vous aider ?',q:['📋 Menu','📅 Réserver','⏰ Horaires','📍 Adresse']},
+  {k:['menu','carte','manger','plat','prix','combien','entrée','dessert','boisson','accra','colombo','langouste','poulet','boudin'],r:'🍽️ Notre carte :\n\nEntrées : Accras de morue 8€ · Boudin créole 9€ · Féroce d\'avocat 7€\n\nPlats : Colombo de poulet 16€ · Poulet boucané 18€ · Langouste grillée 34€ · Blaf de poisson 19€\n\nDesserts : Blanc-manger coco 6€ · Tourment d\'amour 5€\n\nBoissons : Planteur maison 7€ · Jus de corossol 4€',q:['📅 Réserver','⏰ Horaires','🦞 Spécialité']},
+  {k:['réserv','reserver','table','booking','place','couverts','personne'],r:'📅 Avec plaisir ! Pour votre réservation merci de me préciser :\n\n1️⃣ Votre prénom\n2️⃣ La date souhaitée\n3️⃣ L\'heure (midi ou soir)\n4️⃣ Nombre de personnes\n\nOu réservez directement sur WhatsApp 💬',q:['💬 WhatsApp','📋 Menu','⏰ Horaires']},
+  {k:['heure','horaire','ouvert','fermé','ferme','quand','jour','lundi','mardi','samedi','dimanche'],r:'⏰ Nos horaires :\n\n🔴 Lundi : Fermé\n🟢 Mar–Ven : 11h30–14h30 · 18h30–22h\n🟢 Samedi : 12h–15h · 18h–23h\n🟢 Dimanche : 12h–16h\n\nRéservation conseillée le week-end 🎉',q:['📅 Réserver','📋 Menu','📍 Adresse']},
+  {k:['adresse','où','trouver','localisation','chemin','route','gps'],r:'📍 Nous sommes au :\n12 Rue Frébault, Pointe-à-Pitre 97110\n\nEn centre-ville, à 2 min du marché couvert 🗺️\n\nGooglez "Kaz\'à Manger Pointe-à-Pitre" pour l\'itinéraire !',q:['📅 Réserver','⏰ Horaires','💬 WhatsApp']},
+  {k:['spécialité','recommand','conseil','meilleur','top'],r:'⭐ Notre spécialité : le Colombo de poulet (16€) mijoté avec nos épices créoles maison.\n\nCoup de cœur du chef : le Poulet boucané (18€) fumé au bois de caïmite 🔥',q:['📋 Menu complet','📅 Réserver','⏰ Horaires']},
+  {k:['merci','super','parfait','nickel','génial','bravo'],r:'Mési ! 🙏 Avec plaisir. N\'hésitez pas si vous avez d\'autres questions.\n\nÀ très bientôt chez Kaz\'à Manger ! 🌴',q:['📅 Réserver','📋 Menu','⏰ Horaires']},
+  {k:['whatsapp','wa','contact','telephone','joindre'],r:'💬 Contactez-nous directement sur WhatsApp pour une réponse immédiate !\n\nNous répondons en moins de 5 minutes pendant les heures d\'ouverture 🚀',q:['💬 Ouvrir WhatsApp']},
+];
+const DEF=['Je n\'ai pas tout compris 😊 Posez-moi des questions sur notre menu, nos horaires ou pour réserver !','Mési pour votre message ! 🌴 Tapez MENU, HORAIRES ou RÉSERVER pour que je vous aide.'];
+let di=0,busy=false;
+function addMsg(role,txt,qrs){
+  const w=document.getElementById('msgs');
+  const d=document.createElement('div');
+  d.className='msg '+role;
+  if(role==='bot'){
+    d.innerHTML='<div class="bname">Kaz\'IA 🌴</div><div class="bubble">'+txt.replace(/\n/g,'<br>')+'</div>';
+    if(qrs&&qrs.length){
+      const q=document.createElement('div');q.className='qrs';
+      qrs.forEach(l=>{const b=document.createElement('button');b.className='qr';b.textContent=l;b.onclick=()=>send(l);q.appendChild(b);});
+      d.appendChild(q);
+    }
+  } else {
+    d.innerHTML='<div class="bubble">'+txt+'</div>';
+  }
+  w.appendChild(d);w.scrollTop=w.scrollHeight;
+}
+function showTyping(){
+  const w=document.getElementById('msgs');
+  const d=document.createElement('div');d.className='msg bot';d.id='typ';
+  d.innerHTML='<div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+  w.appendChild(d);w.scrollTop=w.scrollHeight;
+}
+function rmTyping(){const t=document.getElementById('typ');if(t)t.remove();}
+function send(ov){
+  const inp=document.getElementById('inp');
+  const txt=ov||inp.value.trim();
+  if(!txt||busy)return;
+  if(!ov){inp.value='';}
+  busy=true;
+  addMsg('user',txt.replace(/</g,'&lt;'));
+  showTyping();
+  setTimeout(()=>{
+    rmTyping();
+    const low=txt.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const match=R.find(r=>r.k.some(k=>low.includes(k)));
+    if(match){addMsg('bot',match.r,match.q);}
+    else{addMsg('bot',DEF[di%DEF.length],['📋 Menu','📅 Réserver','⏰ Horaires','📍 Adresse']);di++;}
+    busy=false;
+    if(!ov)inp.focus();
+  },600+Math.random()*700);
+}
+setTimeout(()=>addMsg('bot','Bonjou ! 🌴 Bienvenue chez Kaz\'à Manger !\n\nJe suis Kaz\'IA, votre assistant. Comment puis-je vous aider ?',['📋 Menu','📅 Réserver','⏰ Horaires','🦞 Spécialité']),500);
+</script>
+</body>
+</html>
